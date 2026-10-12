@@ -1,0 +1,21 @@
+import {test,expect} from '@playwright/test';
+test('sign in, save draft, publish, and render content',async({page})=>{
+ await page.goto('/admin');
+ await expect(page).toHaveURL(/login/);
+ await page.getByLabel('用户名').fill('test-admin');
+ await page.getByLabel('密码').fill('local-e2e-password-123');
+ await page.getByRole('button',{name:'登录',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'网站管理'})).toBeVisible();
+ await page.getByRole('button',{name:'新建文章',exact:true}).click();
+ await page.getByLabel('标题',{exact:true}).fill('Browser verification');
+ await page.getByLabel('Markdown 正文').fill('# Browser verification\n\n> Persisted quote\n\n```python\nprint(1)\n```');
+ await page.getByRole('button',{name:'保存草稿',exact:true}).click();
+ await expect(page.getByRole('status')).toContainText('草稿已保存');
+ await page.reload();
+ await page.getByRole('button',{name:'草稿箱',exact:true}).click();
+ await page.getByRole('button',{name:'编辑 Browser verification',exact:true}).click();
+ await expect(page.getByLabel('Markdown 正文')).toContainText('Persisted quote');
+ await page.getByRole('button',{name:'加入发布队列',exact:true}).click();
+ await page.getByRole('button',{name:/执行发布/}).click();
+ await expect(page.getByRole('status')).toContainText('发布成功');
+});

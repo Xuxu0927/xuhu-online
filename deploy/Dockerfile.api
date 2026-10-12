@@ -1,0 +1,13 @@
+FROM python:3.12-slim
+WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 CONTENT_ROOT=/data/content SECRETS_ROOT=/data/secrets
+COPY my-blog-manager/requirements.txt ./requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt && useradd -u 1000 -m site
+COPY my-blog-manager/cms_core ./cms_core
+COPY deploy/seed ./seed
+COPY tests/backend ./tests/backend
+COPY deploy/deploy.py ./deploy/deploy.py
+RUN pip install --no-cache-dir pytest==9.1.1 && python -m pytest tests/backend -q --tb=short
+USER site
+EXPOSE 8000
+CMD ["sh", "-c", "python -m cms_core.cli migrate --source /app/seed && exec uvicorn cms_core.main:app --host 0.0.0.0 --port 8000 --workers 1"]

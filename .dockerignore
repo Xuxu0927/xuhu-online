@@ -1,0 +1,16 @@
+.git
+.venv
+.idea
+.backups
+.superpowers
+runtime
+**/node_modules
+**/.next
+**/__pycache__
+**/test-results
+**/playwright-report
+*.zip
+*.tar.gz
+**/.env*
+!**/.env.example
+picture

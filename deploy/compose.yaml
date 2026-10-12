@@ -1,0 +1,49 @@
+name: xhblogs
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.api
+    image: xhblogs-api:${RELEASE_TAG:-current}
+    restart: unless-stopped
+    environment:
+      ADMIN_ORIGIN: ${ADMIN_ORIGIN:-http://localhost:18081}
+    volumes:
+      - ../runtime/content:/data/content
+      - ../runtime/secrets:/data/secrets
+      - ../backups:/backups
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.web
+    image: xhblogs-web:${RELEASE_TAG:-current}
+    restart: unless-stopped
+    environment:
+      CMS_INTERNAL_URL: http://api:8000
+      CONTENT_ROOT: /data/content
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      QWEATHER_KEY: ${QWEATHER_KEY:-}
+    ports:
+      - "127.0.0.1:18080:3000"
+    volumes:
+      - ../runtime/content:/data/content:ro
+    depends_on:
+      api: {condition: service_healthy}
+    mem_limit: 700m
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
