@@ -1,31 +1,55 @@
-# 实施记录
+# 服务器改造与验收记录
 
-设计与计划见 `docs/superpowers`。部署目标为独立 8080 入口，已有站点保留。
+2026-10-12：已部署至 http://8.133.165.170:8080。
+应用目录 /opt/xhblogs，独立 Nginx 配置 /etc/nginx/sites-available/xhblogs。
+管理入口：运行 deploy/admin-tunnel.ps1 后访问 http://localhost:18081/admin。
 
-## 决策记录
+## 实施进度
 
-- Ruling: 用户提供 GitHub 仓库后，允许在工作区初始化版本管理并设置远程；替代原计划“无 Git 时不初始化”的限制。首次推送前检查秘密和运行数据。
-- Ruling: 生产服务只装配新版内容路由，旧部署与镜像同步代码不用于线上服务。
-- Task 1: in progress — 备份、依赖与基线验证。
+| 计划任务 | 结果 |
+| --- | --- |
+| 1 基线与备份 | 本机 .backups 保留原项目备份，运行环境已验证 |
+| 2 存储与迁移 | 安全路径、幂等迁移、冲突归档，原秘密不自动迁移 |
+| 3 内容 API | 编辑、草稿、发布、重复提交及回收删除通过 |
+| 4 管理权限 | 加盐哈希、签名会话、Origin 校验，无会话返回 401 |
+| 5 运行时网站 | 内容和配置无需重建，真实公网 URL 已配置 |
+| 6 代理及上传 | 同源代理和持久化图片上传通过；第三方状态见下文 |
+| 7 浏览器后台 | 文章、杂谈、说说、关于、草稿、设置及集合管理可用 |
+| 8 构建及 SEO | 类型、构建、页面验收通过，动态 robots 和 sitemap |
+| 9 部署及恢复 | 非 root 容器、资源限制、健康检查、备份恢复已验证 |
+| 10 服务器验收 | 首次部署、更新重建、重启、公网访问和原站点保留通过 |
 
-- Backend: 13 passed, 1 Windows symlink test skipped; sandbox temp-directory errors require elevated test runs, not application fixes.
-- Frontend: initial 5 type defects fixed; runtime content, Markdown sanitization and operation queue tests passed.
-- Ruling: old Gitalk pulls vulnerable dependencies and exposes secrets; remove it. Until OAuth credentials exist, provide a safe GitHub Issues link and report OAuth integration as not configured.
-- Ruling: co-locate initial API routes in cms_core/server.py for the first verified service, then split when endpoint size warrants it.
+## 验证证据
 
-- Backend: 17 passed, one Windows symlink test skipped; production Linux image will run this same suite.
-- Frontend: six behavior tests, typecheck and production build passed; 11 browser cases passed including draft restore and publication.
-- Ruling: use ESLint recommended TS rules and hooks correctness; old display components retain explicit-any warnings, while new admin/API code retains error severity. No production TS check is skipped.
-- Ruling: initial production password is randomly generated and stored only in an ignored local access file; only its hash/signing configuration transfers over SSH. The admin can change it from settings.
-- Ruling: migration bootstrap uses public-only seeds; no original secret setting migrates automatically.
-- Deployment: isolated /opt/xhblogs created; existing site still returns 200 during image downloads.
+- Python 3.12 Linux 镜像：24 项后端测试通过，1 项依赖弃用警告。Windows 本机 23 项通过，1 项因符号链接能力跳过。
+- 前端 6 项行为测试通过；TypeScript 检查及 Webpack 生产构建通过，不跳过类型错误。
+- 隔离浏览器 13 项通过，覆盖管理发布、富文本图片同步、数学内容及发布队列并发恢复。
+- 生产公网 10 个页面的浏览器测试通过，无页面运行时异常；桌面、手机截图及真实后台浏览器登录通过。
+- 公网首页返回 200。后台、管理 API、编码后的管理路径、旧部署 API、.env 和秘密路径均返回 404。伪造管理请求头无法绕过限制。
+- 隧道无会话请求返回 401。生产登录、草稿保存读取、发布和重复提交、公开正文、回收删除、图片上传及公开读取均通过。
+- 更新重建后草稿保留；重启后管理员、5 条原始文章/杂谈/关于内容和设置保留。临时测试文章已回收，临时图片已删除。
+- 备份恢复到独立目录，19 个文件校验和一致，归档权限 600；更新前自动备份已生成。
+- 容器健康，nginx -t 通过。robots 和 sitemap 使用 http://8.133.165.170:8080，后台 noindex。
+- 原 80 端口网站仍返回 200，原 5000 API 进程仍监听环回地址，原 Nginx default 配置保留。
+- 最近采样：web 约 64 MiB、API 约 47 MiB；上限分别 700 MiB、256 MiB。
+- 构建限制为 1 核、1024 MiB 内存、1536 MiB 内存加交换空间。
+- 失败构建/重试保护已验证镜像对，以及回退状态更新的回归测试通过。成功更新已保留上一版镜像；未执行线上回退切换。
 
-## 独立审查与修复
+## 审查及实现决策
 
-- Fresh reviewer reported six important issues, no confirmed authentication bypass.
-- Fixed: old publish retry preserves newer draft; response applies to latest queue; drafts include content type; rich editor syncs uploaded content; candidate images preserve verified rollback pair; about/config/collection conflicts are archived without secrets.
-- Regression evidence: 21 backend tests pass, one Windows-only symlink capability skip; rich upload/math browser case passes. Candidate build failure/retry test passes.
-- Deployment cannot be accepted yet: after interruption SSH banner and existing public 80 endpoint time out. Console status requested; no Nginx public entry has been installed.
-- GitHub deploy key authorization is now valid (remote repository is empty).
+独立审查的六项重要问题已修复：发布重试误删新草稿、并发发布队列覆盖、同 ID 不同类型草稿冲突、富文本图片同步丢失、失败更新破坏回退镜像、迁移冲突未完整归档。队列问题经旧代码失败、新代码通过的浏览器回归验证。
 
-- Ruling: after the server reboot, use sequential legacy Docker builds with hard cgroup limits (1024 MB RAM, 1536 MB RAM+swap, one CPU), Node heap 512 MB and Webpack. Server confirmed memory/swap enforcement support. Prefer protecting existing service responsiveness over maximum build speed.
+- 用户提供并授权 GitHub 仓库后初始化版本管理，推送至 Xuxu0927/xuhu-online；运行数据、秘密和备份不提交。
+- 新版内容服务为生产入口；旧桌面工具、危险同步及 Git 部署路由不进入线上服务。
+- 初始随机密码仅在本机忽略文件 .backups/admin-access.txt；服务器只接收密码哈希和签名配置。后台可改密码并撤销所有现有会话。
+- API 当前集中于 cms_core/server.py；相册、项目和友链使用经后端校验的 JSON 编辑界面。
+- 国内服务器采用可配置的阿里云 PyPI 镜像，顺序构建并保留资源限制。
+
+## 已知限制
+
+- AI 与天气密钥未配置，外部调用未验收；音乐依赖第三方外链。
+- 旧 Gitalk 已移除，当前留言入口为 GitHub Issues；OAuth 在线评论延期。
+- Lint：0 错误、142 条旧展示组件警告。依赖审计：4 个低危、2 个中危，无高危或严重项；仍需后续维护。
+- 当前为单实例 IP HTTP 部署，后台经 SSH 隧道；更新切换可能短暂不可用。域名及 HTTPS 为后续配置。
+
+操作步骤见 docs/server-deployment.md；原批准设计及计划见 docs/superpowers。

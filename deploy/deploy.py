@@ -7,9 +7,13 @@ import argparse
 from pathlib import Path
 
 def execute(args,env):
-    result=subprocess.run(args,env=env,text=True,check=True,stdout=subprocess.PIPE)
-    if result.stdout:print(result.stdout,end='',flush=True)
-    return result.stdout.strip()
+    process=subprocess.Popen(args,env=env,text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+    output=[]
+    for line in process.stdout:
+        print(line,end='',flush=True);output.append(line)
+    code=process.wait()
+    if code:raise subprocess.CalledProcessError(code,args,output=''.join(output))
+    return ''.join(output).strip()
 
 def deploy(root: Path,run=execute):
     root=root.resolve();compose=root/'deploy/compose.yaml'
@@ -27,7 +31,8 @@ def deploy(root: Path,run=execute):
     # Build never changes current/previous tags or the committed release manifest.
     build_env={**env,'DOCKER_BUILDKIT':'0'}
     for service in ['api','web']:
-        run(['docker','build','--memory','1024m','--memory-swap','1536m','--cpu-period','100000','--cpu-quota','100000','-f',str(root/f'deploy/Dockerfile.{service}'),'-t',f'xhblogs-{service}:{candidate}',str(root)],build_env)
+        index_args=['--build-arg','PIP_INDEX_URL='+os.environ['PIP_INDEX_URL']] if service=='api' and os.environ.get('PIP_INDEX_URL') else []
+        run(['docker','build','--memory','1024m','--memory-swap','1536m','--cpu-period','100000','--cpu-quota','100000',*index_args,'-f',str(root/f'deploy/Dockerfile.{service}'),'-t',f'xhblogs-{service}:{candidate}',str(root)],build_env)
     try:
         run(command+['up','-d','--wait','--wait-timeout','120'],env)
     except subprocess.CalledProcessError:

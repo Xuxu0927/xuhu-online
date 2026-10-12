@@ -33,11 +33,17 @@ python -m cms_core.cli init-admin --username admin
 6. 阿里云安全组按需允许 TCP 8080；不开放 8000、18080、18081。检查已有主机防火墙，保留 SSH 规则。
 7. 核对公网访问、SSH 隧道后台、日志与既有网站。
 
+构建默认使用 PyPI 官方源。如果服务器下载缓慢，可执行
+`PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/ sh deploy/deploy.sh`。
+构建按顺序执行，并限制为 1 个 CPU、1024 MB 内存和 1536 MB 内存加交换空间；首次安装依赖需要等待。
+
 ## 更新与回退
 
 上传新源码时不覆盖 `/opt/xhblogs/runtime`、`backups` 和真实 `.env`。
 再次运行 `deploy/deploy.sh`，会先备份正在运行的数据，并保留上一版镜像。
+更新会重建单实例容器，切换及健康检查期间可能短暂不可用，建议在访问量低时执行。
 应用更新失败后运行 `deploy/rollback.sh`，内容目录不回退或删除。
+首次部署没有上一版镜像，不能回退；后续成功更新才会形成可回退版本。
 
 ## 备份与恢复
 
