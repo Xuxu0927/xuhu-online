@@ -1,0 +1,45 @@
+.article-content { font-size: 16px; line-height: 1.8; overflow-wrap: anywhere; }
+.article-content p, .article-content ul, .article-content ol, .article-content blockquote { font-size: 16px; line-height: 1.8; }
+.article-content p { margin: 1em 0; }
+.article-content h1 { font-size: 1.75rem; }
+.article-content h2 { font-size: 1.45rem; }
+.article-content h3 { font-size: 1.2rem; }
+.article-content h4, .article-content h5, .article-content h6 { font-size: 1.05rem; }
+.article-content :is(h1,h2,h3,h4,h5,h6) { line-height: 1.4; margin: 1.6em 0 .7em; scroll-margin-top: 100px; }
+.article-content a { color: #4f46e5; text-decoration: underline; text-underline-offset: 3px; }
+.dark .article-content a { color: #a5b4fc; }
+.article-content ul { list-style-type: disc; padding-left: 1.5em; }
+.article-content ol { list-style-type: decimal; padding-left: 1.5em; }
+.article-content ul ul { list-style-type: circle; }
+.article-content li { margin: .3em 0; }
+.article-content li > :is(ul,ol) { margin: .4em 0; }
+.article-content .contains-task-list { list-style: none; }
+.article-content .task-list-item input { margin-right: .5em; }
+.article-content blockquote { border-left: 3px solid #818cf8; padding: .2em 1em; background: rgb(99 102 241 / .06); font-style: normal; }
+.article-content img { max-width: 100%; height: auto; margin: 1.5em auto; border-radius: 12px; }
+.article-content table { display: block; max-width: 100%; overflow-x: auto; font-size: .9rem; }
+.article-content :is(th,td) { padding: .6em .8em; border: 1px solid #cbd5e1; }
+.article-content .katex-display { overflow-x: auto; overflow-y: hidden; padding: .4em 0; }
+.article-content :not(pre) > code { font-size: .85em; color: #4f46e5; background: rgb(99 102 241 / .08); padding: .15em .35em; border-radius: 4px; }
+.dark .article-content :not(pre) > code { color: #c7d2fe; }
+.article-content code::before, .article-content code::after { content: none; }
+.article-content .article-code-block { margin: 1.5em 0; border: 1px solid #dbe2ea; border-radius: 12px; overflow: hidden; background: #fff; color: #1f2937; }
+.article-content .article-code-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 14px; border-bottom: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; font: 12px/1.5 ui-monospace, SFMono-Regular, Consolas, monospace; }
+.article-content .article-code-toolbar button { padding: 4px 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; color: #334155; cursor: pointer; font: 12px/1.5 system-ui, sans-serif; }
+.article-content .article-code-toolbar button:hover { background: #eef2ff; color: #4338ca; }
+.article-content .article-code-toolbar button:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+.article-content pre { margin: 0; padding: 16px; max-width: 100%; overflow-x: auto; background: #fff; color: #1f2937; border-radius: 0; font-size: 13px; line-height: 1.65; tab-size: 4; }
+.article-content pre code { display: block; padding: 0; background: transparent; color: inherit; font: inherit; font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace; white-space: pre; overflow-wrap: normal; }
+.article-content .hljs-comment, .article-content .hljs-quote { color: #6b7280; font-style: italic; }
+.article-content .hljs-keyword, .article-content .hljs-doctag, .article-content .hljs-type, .article-content .hljs-selector-tag { color: #8250df; }
+.article-content .hljs-string, .article-content .hljs-regexp, .article-content .hljs-addition { color: #116329; }
+.article-content .hljs-number, .article-content .hljs-literal, .article-content .hljs-attr, .article-content .hljs-variable { color: #0550ae; }
+.article-content .hljs-title, .article-content .hljs-built_in, .article-content .hljs-section { color: #953800; }
+.article-content .hljs-name, .article-content .hljs-deletion { color: #cf222e; }
+@media (max-width: 640px) {
+ .article-content, .article-content p, .article-content ul, .article-content ol, .article-content blockquote { font-size: 15px; }
+ .article-content h1 { font-size: 1.5rem; }
+ .article-content h2 { font-size: 1.25rem; }
+ .article-content h3 { font-size: 1.1rem; }
+ .article-content pre { padding: 12px; font-size: 12px; }
+}
